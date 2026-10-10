@@ -1,0 +1,15 @@
+{
+	"bg": "#000000",
+	"caret": "#DCDCDCFF",
+	"selection": "#DCDCDCFF",
+	"selected": "#000000",
+	
+	"black": "#000000",
+	"white": "#DCDCDCFF",
+	"red": "#FF628C",
+	"yellow": "#FFC600",
+	"pink": "#FB94FF",
+	"green": "#3AD900",
+	"cyan": "#80FCFF",
+	"blue": "#0088FF"
+}

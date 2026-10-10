@@ -1,7 +1,7 @@
 class_name Terminal
 extends CodeEdit
 
-var startup_text = "Godot Terminal [Version 1.0]
+var terminal_info = "Godot Terminal [Version 1.0]
 Copyright (c) Trulle123 2026 - MIT License"
 
 var prompt
@@ -18,21 +18,6 @@ var command_preview_i = 0
 
 var highlighter: TerminalHighlighter
 var colors = {}
-const DEF_COLORS_JSON = '{
-	"bg": "#000000",
-	"caret": "#DCDCDCFF",
-	"selection": "#000000",
-	"selected": "#DCDCDCFF",
-	
-	"black": "#000000",
-	"white": "#DCDCDCFF",
-	"red": "#FF628C",
-	"yellow": "#FFC600",
-	"pink": "#FB94FF",
-	"green": "#3AD900",
-	"cyan": "#80FCFF",
-	"blue": "#0088FF"
-}'
 
 const USER_README = "GODOT TERMINAL
 --------------
@@ -73,10 +58,13 @@ func _ready() -> void:
 		var colors_file = FileAccess.open("user://colors.json", FileAccess.READ)
 		colors = JSON.parse_string(colors_file.get_as_text())
 	else:
-		var colors_file = FileAccess.open("user://colors.json", FileAccess.WRITE)
-		colors_file.store_string(DEF_COLORS_JSON)
+		var def_colors_file = FileAccess.open("res://colors.json", FileAccess.READ)
+		var def_colors_json = def_colors_file.get_as_text()
+		
+		var colors_file = FileAccess.open("res://colors.json", FileAccess.WRITE)
+		colors_file.store_string(def_colors_json)
 		colors_file.close()
-		colors = JSON.parse_string(DEF_COLORS_JSON)
+		colors = JSON.parse_string(def_colors_json)
 	
 	if FileAccess.file_exists("user://font.ttf"):
 		var font_data: PackedByteArray = FileAccess.get_file_as_bytes("user://font.ttf")
@@ -84,7 +72,7 @@ func _ready() -> void:
 		new_font.data = font_data
 		
 		theme.set_font("font", "CodeEdit", new_font)
-	
+		
 	highlighter = TerminalHighlighter.new(colors)
 	syntax_highlighter = highlighter
 	
@@ -103,8 +91,8 @@ func _ready() -> void:
 		commands.gdpt(["install", "user://libs".path_join(lib)], ["-t"], null)
 	
 	command_preview_i = entered_commands.size()
-	prompt = working_dir + "$ "
-	text = startup_text + "\n\n" + prompt
+	prompt = get_prompt()
+	text = get_startup() + "\n\n" + prompt
 	last_valid_text = text
 	
 	highlighter.set_span_color(get_line_count() - 1, 0, prompt.length(), "green")
@@ -279,7 +267,7 @@ func _on_text_changed() -> void:
 
 func _on_caret_changed() -> void:
 	if has_selection():
-		theme.set_color("caret_color", "CodeEdit", syntax_highlighter.colors["bg"])
+		theme.set_color("caret_color", "CodeEdit", Color(0.0, 0.0, 0.0, 0.0))
 	else:
 		theme.set_color("caret_color", "CodeEdit", syntax_highlighter.colors["caret"])
 
@@ -288,6 +276,51 @@ func set_caret_to_end() -> void:
 	var lines = text.split("\n")
 	set_caret_line(lines.size() - 1)
 	set_caret_column(lines[-1].length())
+
+func get_prompt():
+	var user
+	if OS.has_environment("USERNAME"):
+		user = OS.get_environment("USERNAME")
+	elif OS.has_environment("USER"):
+		user = OS.get_environment("USER")
+	
+	var host = OS.get_environment("HOSTNAME")
+	if host.is_empty():
+		host = OS.get_environment("COMPUTERNAME")
+	
+	var full_prompt = (host + "@" + user + ":" + working_dir + "$ ").replace(get_home_dir(), "~")
+	var drive_regex = RegEx.create_from_string("([A-Za-z]):/")
+	full_prompt = drive_regex.sub(full_prompt, "/$1/", true)
+		
+	return full_prompt
+
+func get_startup() -> String:
+	var user
+	if OS.has_environment("USERNAME"):
+		user = OS.get_environment("USERNAME")
+	elif OS.has_environment("USER"):
+		user = OS.get_environment("USER")
+	
+	var host = OS.get_environment("HOSTNAME")
+	if host.is_empty():
+		host = OS.get_environment("COMPUTERNAME")
+	
+	var separator = ""
+	for c in user + "@" + host:
+		separator += "-"
+	
+	var lines = [
+		terminal_info,
+		"",
+		user + "@" + host,
+		"-".repeat((user + "@" + host).length()),
+		"OS: " + OS.get_name() + " " + OS.get_version_alias() + " " + Engine.get_architecture_name(),
+		"Host: " + host,
+		"Libraries: " + str(DirAccess.get_files_at("user://libs").size()),
+		"CPU: " + OS.get_processor_name(),
+	]
+
+	return "\n".join(lines)
 
 # get users home dr
 func get_home_dir():
@@ -308,7 +341,7 @@ func write_output(output, color="white"):
 func set_working_dir(path):
 	last_working_dir = working_dir
 	working_dir = path
-	prompt = working_dir + "$ "
+	prompt = get_prompt()
 	
 # clears the terminal and resets the colors
 func clear_and_reset_colors():

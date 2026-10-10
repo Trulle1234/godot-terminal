@@ -230,9 +230,17 @@ func solve_path(path):
 	if path == "-/":
 		return (terminal.last_working_dir + path.substr(1)).simplify_path()
 	
-	if path == "/" and OS.has_feature("windows"):
-		var drive = terminal.working_dir.get_slice(":", 0)
-		return drive + ":/"
+	if path.begins_with("/") and OS.has_feature("windows"):
+		var parts = path.split("/", false)
+		
+		if parts.is_empty():
+			return terminal.working_dir.get_slice(":", 0).to_lower() + ":/" + "/".join(parts)
+			
+		var drive = parts[0]
+		
+		if drive.length() == 1 and drive.to_lower() >= "a" and drive.to_lower() <= "z":
+			parts.remove_at(0)
+			return drive.to_lower() + ":/" + "/".join(parts)
 	
 	if not path.is_absolute_path():
 		path = terminal.working_dir.path_join(path)
