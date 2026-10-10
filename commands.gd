@@ -148,7 +148,7 @@ func handle_output(args, function, pipe_input=null, pipe=false):
 
 	args = new_args
 	
-	if handle_redirect(args, options, function, pipe_input):
+	if await handle_redirect(args, options, function, pipe_input):
 		return
 	
 	var func_res = await function.call(args, options, pipe_input)
@@ -173,7 +173,7 @@ func handle_redirect(args, options, function, pipe_input):
 	if args.size() >= 2 and (args[-2] == ">" or args[-2] == ">>"):
 		var output_path = solve_path(args[-1])
 		var command_args = args.slice(0, -2)
-		var func_res = function.call(command_args, options, pipe_input)
+		var func_res = await function.call(command_args, options, pipe_input)
 		var file
 		
 		if args[-2] == ">":
@@ -411,7 +411,10 @@ func cat(args, options, pipe_input):
 		text = ""
 		for i in text_lines.size():
 			text += str(i + 1) + " " + text_lines[i] + "\n"
-			
+	
+	if text.length() > 50000:
+		text = text.substr(0, 50000) + "\n... output truncated"
+	
 	return text
 
 func head(args, _options, pipe_input):
@@ -594,6 +597,7 @@ func curl(args, _options, _pipe_input):
 	
 	var http = HTTPRequest.new()
 	http.timeout = 10
+	http.use_threads = true
 	terminal.add_child(http)
 	
 	var error = http.request(url)
@@ -609,8 +613,13 @@ func curl(args, _options, _pipe_input):
 	
 	if result != HTTPRequest.RESULT_SUCCESS:
 		return ["curl: request failed (" + str(result) + ")", "red"]
+		
+	var content = body.get_string_from_utf8()
 	
-	return body.get_string_from_utf8()
+	if content.length() > 50000:
+		content = content.substr(0, 50000) + "\n... output truncated"
+	
+	return content
 
 func gdpt(args, options, _pipe_input):
 	if not args:
