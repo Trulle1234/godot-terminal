@@ -75,16 +75,15 @@ func execute(command_line) -> void:
 			var args = parts.slice(1)
 			
 			if command not in command_registry:
-				var pid = OS.create_process(command, args)
+				var solved_path = solve_path(command)
+				var pid = -1
+				
+				if FileAccess.file_exists(solved_path):
+					pid = OS.create_process(solved_path, args)
+				
 				if pid == -1:
-					var solved_path = solve_path(command)
-					
-					if FileAccess.file_exists(solved_path):
-						pid = OS.create_process(solved_path, args)
-					
-					if pid == -1:
-						terminal.write_output(command + ": not found", "red")
-						break
+					terminal.write_output(command + ": not found", "red")
+					break
 			else:
 				var is_last = i == pipeline.size() - 1
 				if is_last:
@@ -736,14 +735,26 @@ func history(_args, _options, _pipe_input):
 func reset(_args, _options, _pipe_input):
 	if terminal.is_inside_tree():
 		terminal.get_tree().call_deferred("reload_current_scene")
+
+func colors(_args, options, _pipe_input):
+	var lines = []
+	if "-a" in options:
+		lines.append_array([
+			["bg        ████   #" + terminal.syntax_highlighter.colors["bg"].to_html().to_upper(), "bg"],
+			["caret     ████   #" + terminal.syntax_highlighter.colors["caret"].to_html().to_upper(), "caret"],
+			["selection ████   #" + terminal.syntax_highlighter.colors["selection"].to_html().to_upper(), "selection"],
+			["selected  ████   #" + terminal.syntax_highlighter.colors["selected"].to_html().to_upper(), "selected"],
+			["black     ████   #" + terminal.syntax_highlighter.colors["black"].to_html().to_upper(), "black"],
+		])
+	
+	lines.append_array([
+		["white     ████   #" + terminal.syntax_highlighter.colors["white"].to_html().to_upper(), "white"],
+		["red       ████   #" + terminal.syntax_highlighter.colors["red"].to_html().to_upper(), "red"],
+		["yellow    ████   #" + terminal.syntax_highlighter.colors["yellow"].to_html().to_upper(), "yellow"],
+		["pink      ████   #" + terminal.syntax_highlighter.colors["pink"].to_html().to_upper(), "pink"],
+		["green     ████   #" + terminal.syntax_highlighter.colors["green"].to_html().to_upper(), "green"],
+		["cyan      ████   #" + terminal.syntax_highlighter.colors["cyan"].to_html().to_upper(), "cyan"],
+		["blue      ████   #" + terminal.syntax_highlighter.colors["blue"].to_html().to_upper(), "blue"],
+	])
 		
-func colors(_args, _options, _pipe_input):
-	return [
-		["whith    ████   #" + terminal.syntax_highlighter.colors["white"].to_html().to_upper(), "white"],
-		["red      ████   #" + terminal.syntax_highlighter.colors["red"].to_html().to_upper(), "red"],
-		["yellow   ████   #" + terminal.syntax_highlighter.colors["yellow"].to_html().to_upper(), "yellow"],
-		["pink     ████   #" + terminal.syntax_highlighter.colors["pink"].to_html().to_upper(), "pink"],
-		["green    ████   #" + terminal.syntax_highlighter.colors["green"].to_html().to_upper(), "green"],
-		["cyan     ████   #" + terminal.syntax_highlighter.colors["cyan"].to_html().to_upper(), "cyan"],
-		["blue     ████   #" + terminal.syntax_highlighter.colors["blue"].to_html().to_upper(), "blue"],
-	]
+	return lines

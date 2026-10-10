@@ -32,11 +32,12 @@ content_margin_left = 3.0
 content_margin_right = 2.0
 
 [resource]
-CodeEdit/colors/caret_color = Color(0.8627451, 0.8627451, 0.8627451, 1)
-CodeEdit/colors/font_color = Color(0.8627451, 0.8627451, 0.8627451, 1)
+CodeEdit/colors/caret_color = Color(1, 1, 1, 1)
+CodeEdit/colors/font_color = Color(1, 1, 1, 1)
+CodeEdit/colors/font_selected_color = Color(0, 0, 0, 1)
+CodeEdit/colors/selection_color = Color(1, 1, 1, 1)
 CodeEdit/constants/caret_width = 10
 CodeEdit/constants/line_spacing = 0
-CodeEdit/constants/outline_size = 0
 CodeEdit/fonts/font = ExtResource("1_e1x85")
 CodeEdit/styles/normal = SubResource("StyleBoxFlat_sxuvd")
 HScrollBar/styles/grabber = SubResource("StyleBoxFlat_e1x85")

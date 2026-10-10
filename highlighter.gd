@@ -6,7 +6,7 @@ var line_colors = {}
 var span_colors = {}
 
 var colors = {}
-var color_names = ["black", "red", "green", "yellow", "blue", "pink", "cyan", "white"]
+var color_names = ["bg", "caret", "selection", "selected" ,"black", "red", "green", "yellow", "blue", "pink", "cyan", "white"]
 
 func _init(colors_dict) -> void:
 	for original_key in colors_dict:

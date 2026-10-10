@@ -11,7 +11,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CodeEdit" type="CodeEdit" parent="." unique_id=393198227]
+[node name="TerminalInput" type="CodeEdit" parent="." unique_id=393198227]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,10 +22,12 @@ theme = ExtResource("1_sxuvd")
 context_menu_enabled = false
 emoji_menu_enabled = false
 shortcut_keys_enabled = false
-selecting_enabled = false
+drag_and_drop_selection_enabled = false
+middle_mouse_paste_enabled = false
+empty_selection_clipboard_enabled = false
 caret_blink = true
 caret_blink_interval = 0.6
 script = ExtResource("1_7d6gb")
 
-[connection signal="caret_changed" from="CodeEdit" to="CodeEdit" method="_on_caret_changed"]
-[connection signal="text_changed" from="CodeEdit" to="CodeEdit" method="_on_text_changed"]
+[connection signal="caret_changed" from="TerminalInput" to="TerminalInput" method="_on_caret_changed"]
+[connection signal="text_changed" from="TerminalInput" to="TerminalInput" method="_on_text_changed"]

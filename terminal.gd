@@ -18,7 +18,12 @@ var command_preview_i = 0
 
 var highlighter: TerminalHighlighter
 var colors = {}
-const DEF_COLORS = {
+const DEF_COLORS_JSON = '{
+	"bg": "#000000",
+	"caret": "#DCDCDCFF",
+	"selection": "#000000",
+	"selected": "#DCDCDCFF",
+	
 	"black": "#000000",
 	"white": "#DCDCDCFF",
 	"red": "#FF628C",
@@ -27,7 +32,7 @@ const DEF_COLORS = {
 	"green": "#3AD900",
 	"cyan": "#80FCFF",
 	"blue": "#0088FF"
-}
+}'
 
 const USER_README = "GODOT TERMINAL
 --------------
@@ -69,8 +74,9 @@ func _ready() -> void:
 		colors = JSON.parse_string(colors_file.get_as_text())
 	else:
 		var colors_file = FileAccess.open("user://colors.json", FileAccess.WRITE)
-		colors_file.store_string(JSON.stringify(DEF_COLORS, "\t"))
-		colors = DEF_COLORS
+		colors_file.store_string(DEF_COLORS_JSON)
+		colors_file.close()
+		colors = JSON.parse_string(DEF_COLORS_JSON)
 	
 	if FileAccess.file_exists("user://font.ttf"):
 		var font_data: PackedByteArray = FileAccess.get_file_as_bytes("user://font.ttf")
@@ -82,10 +88,12 @@ func _ready() -> void:
 	highlighter = TerminalHighlighter.new(colors)
 	syntax_highlighter = highlighter
 	
-	theme.set_color("caret_color", "CodeEdit", syntax_highlighter.colors["white"])
+	theme.set_color("caret_color", "CodeEdit", syntax_highlighter.colors["caret"])
 	theme.set_color("font_color", "CodeEdit", syntax_highlighter.colors["white"])
+	theme.set_color("font_selected_color", "CodeEdit", syntax_highlighter.colors["selected"])
+	theme.set_color("selection_color", "CodeEdit", syntax_highlighter.colors["selection"])
 	var current_style = theme.get_stylebox("normal", "CodeEdit").duplicate()
-	current_style.bg_color = Color(syntax_highlighter.colors["black"])
+	current_style.bg_color = Color(syntax_highlighter.colors["bg"])
 	theme.set_stylebox("normal", "CodeEdit", current_style)
 	
 	commands = TerminalCommands.new(self)
@@ -103,6 +111,27 @@ func _ready() -> void:
 	
 # handle enter presses
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed:
+		var last_line = get_line_count() - 1
+		var locked_column = prompt.length()
+		
+		if event.keycode == KEY_BACKSPACE:
+			if get_caret_line() < last_line:
+				accept_event()
+				return
+			if get_caret_column() <= locked_column:
+				accept_event()
+				return
+		
+		elif event.keycode == KEY_DELETE:
+			if get_caret_line() < last_line:
+				accept_event()
+				return
+			
+			if get_caret_column() < locked_column:
+				accept_event()
+				return
+	
 	if event.is_action_pressed("enter"):
 		accept_event()
 		
@@ -161,7 +190,7 @@ func _gui_input(event: InputEvent) -> void:
 				text += "/"
 			else:
 				text += " "
-
+		
 		last_valid_text = text
 		set_caret_to_end()
 		
@@ -211,8 +240,14 @@ func _gui_input(event: InputEvent) -> void:
 		theme.set_font_size("font_size", "CodeEdit", theme.get_font_size("font_size", "CodeEdit") - 1)
 		theme.set_constant("caret_width", "CodeEdit", int((theme.get_font_size("font_size", "CodeEdit") - 1) * 0.625))
 	
+	elif event.is_action_pressed("copy"):
+		if has_selection():
+			DisplayServer.clipboard_set(get_selected_text())
+			set_caret_to_end()
+	
 	elif event.is_action_pressed("paste"):
 		text += DisplayServer.clipboard_get()
+		set_caret_to_end()
 
 # revert the text to last "saved state"
 func revert_text():
@@ -242,19 +277,12 @@ func _on_text_changed() -> void:
 		revert_text()
 		return
 
-#when the caret changed make sure its in an allowed spot
 func _on_caret_changed() -> void:
-	var total_lines = get_line_count()
-	var current_line = get_caret_line()
-	var current_col = get_caret_column()
-	
-	if current_line < total_lines - 1:
-		set_caret_to_end()
-		return
-	
-	if current_line == total_lines - 1 and current_col < prompt.length():
-		set_caret_column(prompt.length())
-	
+	if has_selection():
+		theme.set_color("caret_color", "CodeEdit", syntax_highlighter.colors["bg"])
+	else:
+		theme.set_color("caret_color", "CodeEdit", syntax_highlighter.colors["caret"])
+
 # helper to put the caret at text end
 func set_caret_to_end() -> void:
 	var lines = text.split("\n")
